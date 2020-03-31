@@ -32,36 +32,31 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "TArray.h"
 
 const GLint HEIGHT = 768, WIDTH = 1024;
-GLuint VAO, VBO, shader;
+GLuint VAO, VBO, shader, uniformModel;
+const float toRadians = 3.14159265f / 180.0f;
+
+bool direction = true;
+float triOffset = 0.0f;
+float triMaxOffset = 0.7f;
+float triIncrement = 0.005f;
 
 // Vertex Shader
-static const char* vShader =   "                    \n\
-#version 330                                        \n\
-                                                    \n\
-layout(location = 0) in vec3 pos;                   \n\
-                                                    \n\
-void main()                                         \n\
-{                                                   \n\
-    gl_Position = vec4(pos, 1.0f);                  \n\
-}";
+static const char* vShader = "../Resources/Shaders/vShader.vert";
 
 // Fragment Shader
-static const char* fShader =   "                    \n\
-#version 330                                        \n\
-                                                    \n\
-out vec4 colour;                                    \n\
-                                                    \n\
-void main()                                         \n\
-{                                                   \n\
-    colour = vec4(1.0f, 0.0f, 0.0f, 1.0f);          \n\
-}";
+static const char* fShader = "../Resources/Shaders/fShader.frag";
+
 
 // VAO will hold multiple VBO
 void CreateTriangle()
@@ -74,9 +69,12 @@ void CreateTriangle()
          0.0,  1.0,  0.0
     };
 
+    // Creamos un Vertex Array Object. Este VAO contiene todos los VBO
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
+    // Creamos un Vertex Buffer Object. Este VBO contiene el Mesh 3D.
+    // Puede contener ademas, otros tipos de elementos.
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
@@ -93,25 +91,39 @@ void AddShader(GLuint program, const char* shaderCode, GLenum shaderType)
 {
     GLint errorCode = 0;
     GLchar buffer[1024];
-    GLuint currentShader = glCreateShader(shaderType);
     const GLchar* pCode[1];
-    pCode[0] = shaderCode;
 
-    GLint codeLength[1];
-    codeLength[0] = strlen(shaderCode);
-
-    glShaderSource(currentShader, 1, pCode, codeLength);
-    glCompileShader(currentShader);
-
-    glGetShaderiv(currentShader, GL_COMPILE_STATUS, &errorCode);
-    if (!errorCode)
+    std::ifstream shaderFile{ shaderCode };
+    if (shaderFile.is_open())
     {
-        glGetShaderInfoLog(currentShader, sizeof(buffer), nullptr, buffer);
-        std::cout << "ERROR (COMPILER ("<< shaderType << ")): " << buffer << std::endl;
-        return;
-    }
+        std::stringstream sstream;
+        sstream << shaderFile.rdbuf();
+        std::string contents = sstream.str();
 
-    glAttachShader(program, currentShader);
+        pCode[0] = contents.c_str();
+
+        GLint codeLength[1];
+        codeLength[0] = strlen(contents.c_str());
+
+        GLuint currentShader = glCreateShader(shaderType);
+
+        glShaderSource(currentShader, 1, pCode, codeLength);
+        glCompileShader(currentShader);
+
+        glGetShaderiv(currentShader, GL_COMPILE_STATUS, &errorCode);
+        if (!errorCode)
+        {
+            glGetShaderInfoLog(currentShader, sizeof(buffer), nullptr, buffer);
+            std::cout << "ERROR (COMPILER (" << shaderType << ")): " << buffer << std::endl;
+            return;
+        }
+
+        glAttachShader(program, currentShader);
+    }
+    else
+    {
+        // TODO: Handle error
+    }
 }
 
 bool CompileShader(const char *vShader, const char *fShader)
@@ -150,8 +162,10 @@ bool CompileShader(const char *vShader, const char *fShader)
         return false;
     }
 
-    return true;
+    // Cogemos el valor de la variable uniform declarada en el shader.
+    uniformModel = glGetUniformLocation(shader, "model");
 
+    return true;
 }
 
 int main()
@@ -224,12 +238,36 @@ int main()
         // Detect any external event (Mouse, Keyboard, ...)
         glfwPollEvents();
 
+        if (direction == true)
+        {
+            triOffset += triIncrement;
+
+        }
+        else
+        {
+            triOffset -= triIncrement;
+        }
+
+        if (abs(triOffset) >= triMaxOffset)
+        {
+            direction = !direction;
+        }
+
         // Clear the Window
         glClearColor(0,0,0,0);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Here we render the scene.
         glUseProgram(shader);
+
+        // Transform
+        glm::mat4 model(1.0f);
+        //model = glm::translate(model, glm::vec3(triOffset, 0,0));
+        //model = glm::rotate(model, 45.0f * toRadians, glm::vec3(0.0, 0.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.0f));
+
+        // Establecemos el valor al shader.
+        glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(VAO);
 

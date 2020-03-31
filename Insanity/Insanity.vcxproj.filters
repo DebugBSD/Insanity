@@ -4,12 +4,24 @@
     <Filter Include="Container">
       <UniqueIdentifier>{f855a322-dcdd-445b-8409-7c4cf463f044}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{63ce91e0-fa8d-42ee-bb77-73f942215dfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{02960138-23f3-4b21-af2e-21ad36340012}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Insanity.licenseheader" />
+    <None Include="..\Resources\Shaders\fShader.frag">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="..\Resources\Shaders\vShader.vert">
+      <Filter>Resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TArray.h">
