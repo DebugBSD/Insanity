@@ -32,6 +32,8 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <glm/glm.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -47,28 +49,11 @@ float triMaxOffset = 0.7f;
 float triIncrement = 0.005f;
 
 // Vertex Shader
-static const char* vShader = "                              \n\
-#version 330                                                \n\
-                                                            \n\
-layout(location = 0) in vec3 pos;                           \n\
-                                                            \n\
-uniform float xMove;                                        \n\
-                                                            \n\
-void main()                                                 \n\
-{                                                           \n\
-    gl_Position = vec4(pos.x*0.4+xMove, pos.y*0.4, pos.z, 1.0f);  \n\
-}";
+static const char* vShader = "../Resources/Shaders/vShader.vert";
 
 // Fragment Shader
-static const char* fShader =   "                            \n\
-#version 330                                                \n\
-                                                            \n\
-out vec4 colour;                                            \n\
-                                                            \n\
-void main()                                                 \n\
-{                                                           \n\
-    colour = vec4(1.0f, 0.0f, 0.0f, 1.0f);                  \n\
-}";
+static const char* fShader = "../Resources/Shaders/fShader.frag";
+
 
 // VAO will hold multiple VBO
 void CreateTriangle()
@@ -103,25 +88,39 @@ void AddShader(GLuint program, const char* shaderCode, GLenum shaderType)
 {
     GLint errorCode = 0;
     GLchar buffer[1024];
-    GLuint currentShader = glCreateShader(shaderType);
     const GLchar* pCode[1];
-    pCode[0] = shaderCode;
 
-    GLint codeLength[1];
-    codeLength[0] = strlen(shaderCode);
-
-    glShaderSource(currentShader, 1, pCode, codeLength);
-    glCompileShader(currentShader);
-
-    glGetShaderiv(currentShader, GL_COMPILE_STATUS, &errorCode);
-    if (!errorCode)
+    std::ifstream shaderFile{ shaderCode };
+    if (shaderFile.is_open())
     {
-        glGetShaderInfoLog(currentShader, sizeof(buffer), nullptr, buffer);
-        std::cout << "ERROR (COMPILER ("<< shaderType << ")): " << buffer << std::endl;
-        return;
-    }
+        std::stringstream sstream;
+        sstream << shaderFile.rdbuf();
+        std::string contents = sstream.str();
 
-    glAttachShader(program, currentShader);
+        pCode[0] = contents.c_str();
+
+        GLint codeLength[1];
+        codeLength[0] = strlen(contents.c_str());
+
+        GLuint currentShader = glCreateShader(shaderType);
+
+        glShaderSource(currentShader, 1, pCode, codeLength);
+        glCompileShader(currentShader);
+
+        glGetShaderiv(currentShader, GL_COMPILE_STATUS, &errorCode);
+        if (!errorCode)
+        {
+            glGetShaderInfoLog(currentShader, sizeof(buffer), nullptr, buffer);
+            std::cout << "ERROR (COMPILER (" << shaderType << ")): " << buffer << std::endl;
+            return;
+        }
+
+        glAttachShader(program, currentShader);
+    }
+    else
+    {
+        // TODO: Handle error
+    }
 }
 
 bool CompileShader(const char *vShader, const char *fShader)
