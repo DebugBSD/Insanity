@@ -30,12 +30,127 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 const GLint HEIGHT = 768, WIDTH = 1024;
+GLuint VAO, VBO, shader;
+
+// Vertex Shader
+static const char* vShader =   "                    \n\
+#version 330                                        \n\
+                                                    \n\
+layout(location = 0) in vec3 pos;                   \n\
+                                                    \n\
+void main()                                         \n\
+{                                                   \n\
+    gl_Position = vec4(pos, 1.0f);                  \n\
+}";
+
+// Fragment Shader
+static const char* fShader =   "                    \n\
+#version 330                                        \n\
+                                                    \n\
+out vec4 colour;                                    \n\
+                                                    \n\
+void main()                                         \n\
+{                                                   \n\
+    colour = vec4(1.0f, 0.0f, 0.0f, 1.0f);          \n\
+}";
+
+// VAO will hold multiple VBO
+void CreateTriangle()
+{
+    GLfloat vertices[] =
+    {
+        //X     Y     Z
+        -1.0, -1.0,  0.0,
+         1.0, -1.0,  0.0,
+         0.0,  1.0,  0.0
+    };
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindVertexArray(0);
+}
+
+void AddShader(GLuint program, const char* shaderCode, GLenum shaderType)
+{
+    GLint errorCode = 0;
+    GLchar buffer[1024];
+    GLuint currentShader = glCreateShader(shaderType);
+    const GLchar* pCode[1];
+    pCode[0] = shaderCode;
+
+    GLint codeLength[1];
+    codeLength[0] = strlen(shaderCode);
+
+    glShaderSource(currentShader, 1, pCode, codeLength);
+    glCompileShader(currentShader);
+
+    glGetShaderiv(currentShader, GL_COMPILE_STATUS, &errorCode);
+    if (!errorCode)
+    {
+        glGetShaderInfoLog(currentShader, sizeof(buffer), nullptr, buffer);
+        std::cout << "ERROR (COMPILER ("<< shaderType << ")): " << buffer << std::endl;
+        return;
+    }
+
+    glAttachShader(program, currentShader);
+}
+
+bool CompileShader(const char *vShader, const char *fShader)
+{
+    shader = glCreateProgram();
+
+    if (!shader)
+    {
+        // TODO: Handle error.
+        std::cout << "ERROR: Creating shader." << std::endl;
+        return false;
+    }
+
+    AddShader(shader, vShader, GL_VERTEX_SHADER);
+
+    AddShader(shader, fShader, GL_FRAGMENT_SHADER);
+
+    GLint errorCode = 0;
+    GLchar buffer[1024];
+
+    glLinkProgram(shader);
+    glGetProgramiv(shader, GL_LINK_STATUS, &errorCode);
+    if (!errorCode)
+    {
+        glGetProgramInfoLog(shader, sizeof(buffer), nullptr, buffer);
+        std::cout << "ERROR (LINKER): " << buffer << std::endl;
+        return false;
+    }
+
+    glValidateProgram(shader);
+    glGetProgramiv(shader, GL_VALIDATE_STATUS, &errorCode);
+    if (!errorCode)
+    {
+        glGetProgramInfoLog(shader, sizeof(buffer), nullptr, buffer);
+        std::cout << "ERROR (VALIDATE): " << buffer << std::endl;
+        return false;
+    }
+
+    return true;
+
+}
 
 int main()
 {
@@ -91,6 +206,9 @@ int main()
 
     glViewport(0,0,bufferWidth, bufferHeight);
 
+    CreateTriangle();
+    CompileShader(vShader, fShader);
+
     while (!glfwWindowShouldClose(pWindow))
     {
         // Detect any external event (Mouse, Keyboard, ...)
@@ -101,6 +219,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Here we render the scene.
+        glUseProgram(shader);
+
+        glBindVertexArray(VAO);
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glBindVertexArray(0);
+
+        glUseProgram(0);
 
         // Draw the scene.
         glfwSwapBuffers(pWindow);
