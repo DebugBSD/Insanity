@@ -158,6 +158,8 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Resources\Shaders\fShader.frag" />
+    <None Include="..\Resources\Shaders\vShader.vert" />
     <None Include="Insanity.licenseheader" />
   </ItemGroup>
   <ItemGroup>

@@ -35,13 +35,15 @@
 #include <fstream>
 #include <sstream>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "TArray.h"
 
 const GLint HEIGHT = 768, WIDTH = 1024;
-GLuint VAO, VBO, shader, uniformXMove;
+GLuint VAO, VBO, shader, uniformModel;
 
 bool direction = true;
 float triOffset = 0.0f;
@@ -160,7 +162,7 @@ bool CompileShader(const char *vShader, const char *fShader)
     }
 
     // Cogemos el valor de la variable uniform declarada en el shader.
-    uniformXMove = glGetUniformLocation(shader, "xMove");
+    uniformModel = glGetUniformLocation(shader, "model");
 
     return true;
 }
@@ -257,8 +259,13 @@ int main()
         // Here we render the scene.
         glUseProgram(shader);
 
+        // Transform
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, glm::vec3(triOffset, 0,0));
+
         // Establecemos el valor al shader.
-        glUniform1f(uniformXMove,triOffset);
+        glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+
         glBindVertexArray(VAO);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
