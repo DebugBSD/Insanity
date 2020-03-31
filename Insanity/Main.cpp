@@ -36,6 +36,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "TArray.h"
+
 const GLint HEIGHT = 768, WIDTH = 1024;
 GLuint VAO, VBO, shader;
 
@@ -154,6 +156,14 @@ bool CompileShader(const char *vShader, const char *fShader)
 
 int main()
 {
+    TArray<int> arrayOfInt{ 10 };
+    arrayOfInt.Append(15,15);
+
+    for (int i = 0; i < 10; i++)
+    {
+        arrayOfInt[i] = i;
+    }
+
     if (glfwInit() == GLFW_FALSE)
     {
         // TODO: Handle error.

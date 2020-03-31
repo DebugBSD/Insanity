@@ -11,4 +11,9 @@
   <ItemGroup>
     <None Include="Insanity.licenseheader" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TArray.h">
+      <Filter>Container</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
