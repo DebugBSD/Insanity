@@ -43,13 +43,14 @@
 #include "TArray.h"
 
 const GLint HEIGHT = 768, WIDTH = 1024;
-GLuint VAO, VBO, shader, uniformModel;
+GLuint VAO, VBO, IBO, shader, uniformModel;
 const float toRadians = 3.14159265f / 180.0f;
 
 bool direction = true;
 float triOffset = 0.0f;
 float triMaxOffset = 0.7f;
 float triIncrement = 0.005f;
+float currentAngle = 0;
 
 // Vertex Shader
 static const char* vShader = "../Resources/Shaders/vShader.vert";
@@ -61,29 +62,37 @@ static const char* fShader = "../Resources/Shaders/fShader.frag";
 // VAO will hold multiple VBO
 void CreateTriangle()
 {
-    GLfloat vertices[] =
-    {
-        //X     Y     Z
-        -1.0, -1.0,  0.0,
-         1.0, -1.0,  0.0,
-         0.0,  1.0,  0.0
+    unsigned int indices[] = {
+        0, 3, 1,
+        1, 3, 2,
+        2, 3, 0,
+        0, 1, 2
     };
 
-    // Creamos un Vertex Array Object. Este VAO contiene todos los VBO
+    GLfloat vertices[] = {
+        -1.0f, -1.0f, 0.0f,
+        0.0f, -1.0f, 1.0f,
+        1.0f, -1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f
+    };
+
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
-    // Creamos un Vertex Buffer Object. Este VBO contiene el Mesh 3D.
-    // Puede contener ademas, otros tipos de elementos.
+    glGenBuffers(1, &IBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
     glBindVertexArray(0);
 }
 
@@ -191,7 +200,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWwindow* pWindow = glfwCreateWindow(WIDTH, HEIGHT, "Test OpenGL Windows", nullptr, nullptr);
     if (pWindow == nullptr)
@@ -228,6 +237,8 @@ int main()
         return -2;
     }
 
+    glEnable(GL_DEPTH_TEST);
+
     glViewport(0,0,bufferWidth, bufferHeight);
 
     CreateTriangle();
@@ -237,6 +248,10 @@ int main()
     {
         // Detect any external event (Mouse, Keyboard, ...)
         glfwPollEvents();
+
+        if (currentAngle >= 360) currentAngle = 0;
+
+        currentAngle += 1.0f;
 
         if (direction == true)
         {
@@ -255,7 +270,7 @@ int main()
 
         // Clear the Window
         glClearColor(0,0,0,0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Here we render the scene.
         glUseProgram(shader);
@@ -263,16 +278,16 @@ int main()
         // Transform
         glm::mat4 model(1.0f);
         //model = glm::translate(model, glm::vec3(triOffset, 0,0));
-        //model = glm::rotate(model, 45.0f * toRadians, glm::vec3(0.0, 0.0f, 1.0f));
-        model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.0f));
+        model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0, 1.0f,0.0f));
+        model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
         // Establecemos el valor al shader.
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(VAO);
-
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+        glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
         glUseProgram(0);
