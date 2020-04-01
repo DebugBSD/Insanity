@@ -43,7 +43,7 @@
 #include "TArray.h"
 
 const GLint HEIGHT = 768, WIDTH = 1024;
-GLuint VAO, VBO, IBO, shader, uniformModel;
+GLuint VAO, VBO, IBO, shader, uniformModel, uniformProjection;
 const float toRadians = 3.14159265f / 180.0f;
 
 bool direction = true;
@@ -173,7 +173,7 @@ bool CompileShader(const char *vShader, const char *fShader)
 
     // Cogemos el valor de la variable uniform declarada en el shader.
     uniformModel = glGetUniformLocation(shader, "model");
-
+    uniformProjection = glGetUniformLocation(shader, "projection");
     return true;
 }
 
@@ -244,6 +244,8 @@ int main()
     CreateTriangle();
     CompileShader(vShader, fShader);
 
+    glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth/(GLfloat)bufferHeight, 0.1f, 1000.0f);
+
     while (!glfwWindowShouldClose(pWindow))
     {
         // Detect any external event (Mouse, Keyboard, ...)
@@ -277,12 +279,13 @@ int main()
 
         // Transform
         glm::mat4 model(1.0f);
-        //model = glm::translate(model, glm::vec3(triOffset, 0,0));
-        model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0, 1.0f,0.0f));
+        model = glm::translate(model, glm::vec3(triOffset, 0.0f ,-2.5f));
+        //model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0, 1.0f,0.0f));
         model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
         // Establecemos el valor al shader.
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(VAO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
