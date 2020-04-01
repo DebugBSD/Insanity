@@ -10,9 +10,30 @@
     <Filter Include="Renderer">
       <UniqueIdentifier>{02960138-23f3-4b21-af2e-21ad36340012}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Graphics">
+      <UniqueIdentifier>{0230c64e-8612-4f81-b918-ce79d34ac9e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECS">
+      <UniqueIdentifier>{04962fde-eeb7-4900-a2c6-30e04a9c65b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameApplication">
+      <UniqueIdentifier>{8b55b0f2-a3a5-4a32-af33-0faf7954cbe7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="GameApplication.cpp">
+      <Filter>GameApplication</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Insanity.licenseheader" />
@@ -26,6 +47,18 @@
   <ItemGroup>
     <ClInclude Include="TArray.h">
       <Filter>Container</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="GameApplication.h">
+      <Filter>GameApplication</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

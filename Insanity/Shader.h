@@ -32,50 +32,32 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <malloc.h>
-#include <stdlib.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
-template<typename T>
-class TArray
+#include "GL/glew.h"
+
+class Shader
 {
-private:
-	T* m_pElem;
-	size_t m_Size;
-	size_t m_CurrentIndex;
-	size_t m_Growth;
-
 public:
-	TArray(size_t size = 1, size_t growth = 1):
-		m_pElem{new T[size]},
-		m_Size{size},
-		m_CurrentIndex{0},
-		m_Growth{growth}
-	{
-		
-	}
+	Shader();
+	~Shader();
 
-	T& operator[](size_t i)
-	{
-		return m_pElem[i];
-	}
+	void CreateFromString(const std::string&vCode, const std::string &fCode);
+	void CreateFromFile(const std::string& vertexFile, const std::string& fragmentFile);
 
-	void Append(const int index, const T& data)
-	{
-		if (index < m_CurrentIndex - 1)
-		{
-			m_pElem[index] = data;
-		}
-		else
-		{
-			const size_t lastSize = m_CurrentIndex;
-			T* newData = new T[index + 1];
-			std::copy(m_pElem, m_pElem + lastSize, newData);
-			delete[] m_pElem;
-			m_pElem = newData;
-			m_pElem[index] = data;
-			m_CurrentIndex = index + 1;
-		}
-	}
+	GLuint GetProjectionLocation();
+	GLuint GetModelLocation();
+
+	void UseShader();
+	void ClearShader();
+
+private:
+	GLuint m_ShaderID, m_UniformProjection, m_UniformModel;
+
+	void CompileShader(const std::string& vCode, const std::string& fCode);
+	void AddShader(const std::string& shaderCode, GLenum shaderType);
 };
 

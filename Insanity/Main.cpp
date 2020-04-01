@@ -34,6 +34,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -41,16 +42,11 @@
 #include <GLFW/glfw3.h>
 
 #include "TArray.h"
+#include "Mesh.h"
+#include "Shader.h"
 
 const GLint HEIGHT = 768, WIDTH = 1024;
-GLuint VAO, VBO, IBO, shader, uniformModel, uniformProjection;
 const float toRadians = 3.14159265f / 180.0f;
-
-bool direction = true;
-float triOffset = 0.0f;
-float triMaxOffset = 0.7f;
-float triIncrement = 0.005f;
-float currentAngle = 0;
 
 // Vertex Shader
 static const char* vShader = "../Resources/Shaders/vShader.vert";
@@ -58,6 +54,8 @@ static const char* vShader = "../Resources/Shaders/vShader.vert";
 // Fragment Shader
 static const char* fShader = "../Resources/Shaders/fShader.frag";
 
+std::vector<Mesh*> m_MeshList;
+std::vector<Shader*> m_ShaderList;
 
 // VAO will hold multiple VBO
 void CreateTriangle()
@@ -76,105 +74,20 @@ void CreateTriangle()
         0.0f, 1.0f, 0.0f
     };
 
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    Mesh* pMesh = new Mesh();
+    pMesh->CreateMesh(vertices, indices, 12, 12);
+    m_MeshList.push_back(pMesh);
 
-    glGenBuffers(1, &IBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    glBindVertexArray(0);
+    pMesh = new Mesh();
+    pMesh->CreateMesh(vertices, indices, 12, 12);
+    m_MeshList.push_back(pMesh);
 }
 
-void AddShader(GLuint program, const char* shaderCode, GLenum shaderType)
+void CreateShaders()
 {
-    GLint errorCode = 0;
-    GLchar buffer[1024];
-    const GLchar* pCode[1];
-
-    std::ifstream shaderFile{ shaderCode };
-    if (shaderFile.is_open())
-    {
-        std::stringstream sstream;
-        sstream << shaderFile.rdbuf();
-        std::string contents = sstream.str();
-
-        pCode[0] = contents.c_str();
-
-        GLint codeLength[1];
-        codeLength[0] = strlen(contents.c_str());
-
-        GLuint currentShader = glCreateShader(shaderType);
-
-        glShaderSource(currentShader, 1, pCode, codeLength);
-        glCompileShader(currentShader);
-
-        glGetShaderiv(currentShader, GL_COMPILE_STATUS, &errorCode);
-        if (!errorCode)
-        {
-            glGetShaderInfoLog(currentShader, sizeof(buffer), nullptr, buffer);
-            std::cout << "ERROR (COMPILER (" << shaderType << ")): " << buffer << std::endl;
-            return;
-        }
-
-        glAttachShader(program, currentShader);
-    }
-    else
-    {
-        // TODO: Handle error
-    }
-}
-
-bool CompileShader(const char *vShader, const char *fShader)
-{
-    shader = glCreateProgram();
-
-    if (!shader)
-    {
-        // TODO: Handle error.
-        std::cout << "ERROR: Creating shader." << std::endl;
-        return false;
-    }
-
-    AddShader(shader, vShader, GL_VERTEX_SHADER);
-
-    AddShader(shader, fShader, GL_FRAGMENT_SHADER);
-
-    GLint errorCode = 0;
-    GLchar buffer[1024];
-
-    glLinkProgram(shader);
-    glGetProgramiv(shader, GL_LINK_STATUS, &errorCode);
-    if (!errorCode)
-    {
-        glGetProgramInfoLog(shader, sizeof(buffer), nullptr, buffer);
-        std::cout << "ERROR (LINKER): " << buffer << std::endl;
-        return false;
-    }
-
-    glValidateProgram(shader);
-    glGetProgramiv(shader, GL_VALIDATE_STATUS, &errorCode);
-    if (!errorCode)
-    {
-        glGetProgramInfoLog(shader, sizeof(buffer), nullptr, buffer);
-        std::cout << "ERROR (VALIDATE): " << buffer << std::endl;
-        return false;
-    }
-
-    // Cogemos el valor de la variable uniform declarada en el shader.
-    uniformModel = glGetUniformLocation(shader, "model");
-    uniformProjection = glGetUniformLocation(shader, "projection");
-    return true;
+    Shader* pShader = new Shader();
+    pShader->CreateFromFile(vShader, fShader);
+    m_ShaderList.push_back(pShader);
 }
 
 int main()
@@ -242,7 +155,7 @@ int main()
     glViewport(0,0,bufferWidth, bufferHeight);
 
     CreateTriangle();
-    CompileShader(vShader, fShader);
+    CreateShaders();
 
     glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth/(GLfloat)bufferHeight, 0.1f, 1000.0f);
 
@@ -251,47 +164,33 @@ int main()
         // Detect any external event (Mouse, Keyboard, ...)
         glfwPollEvents();
 
-        if (currentAngle >= 360) currentAngle = 0;
-
-        currentAngle += 1.0f;
-
-        if (direction == true)
-        {
-            triOffset += triIncrement;
-
-        }
-        else
-        {
-            triOffset -= triIncrement;
-        }
-
-        if (abs(triOffset) >= triMaxOffset)
-        {
-            direction = !direction;
-        }
-
         // Clear the Window
         glClearColor(0,0,0,0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Here we render the scene.
-        glUseProgram(shader);
+        m_ShaderList[0]->UseShader();
+        GLuint uniformModel = m_ShaderList[0]->GetModelLocation();
+        GLuint uniformProjection = m_ShaderList[0]->GetProjectionLocation();
 
-        // Transform
+        // Renderizamos el primer objeto
+        // Aplicamos Transform
         glm::mat4 model(1.0f);
-        model = glm::translate(model, glm::vec3(triOffset, 0.0f ,-2.5f));
-        //model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0, 1.0f,0.0f));
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f ,-2.5f));
         model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-
         // Establecemos el valor al shader.
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-        glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+        m_MeshList[0]->RenderMesh();
+
+        // Renderizamos el segundo objeto.
+        // Aplicamos el transform
+        model = glm::mat4(1.0);
+        model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
+        model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+        glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+        m_MeshList[1]->RenderMesh();
 
         glUseProgram(0);
 
