@@ -31,51 +31,22 @@
  */
 
 #pragma once
+#include <string>
+#include <GL/glew.h>
 
-#include <stdio.h>
-#include <malloc.h>
-#include <stdlib.h>
-
-template<typename T>
-class TArray
+class Mesh
 {
-private:
-	T* m_pElem;
-	size_t m_Size;
-	size_t m_CurrentIndex;
-	size_t m_Growth;
-
 public:
-	TArray(size_t size = 1, size_t growth = 1):
-		m_pElem{new T[size]},
-		m_Size{size},
-		m_CurrentIndex{0},
-		m_Growth{growth}
-	{
-		
-	}
+	Mesh();
+	~Mesh();
 
-	T& operator[](size_t i)
-	{
-		return m_pElem[i];
-	}
+	void CreateMesh(const GLfloat *vertices, unsigned int *indices, unsigned int numVertices, unsigned int numIndices);
+	void RenderMesh();
+	void ClearMesh();
 
-	void Append(const int index, const T& data)
-	{
-		if (index < m_CurrentIndex - 1)
-		{
-			m_pElem[index] = data;
-		}
-		else
-		{
-			const size_t lastSize = m_CurrentIndex;
-			T* newData = new T[index + 1];
-			std::copy(m_pElem, m_pElem + lastSize, newData);
-			delete[] m_pElem;
-			m_pElem = newData;
-			m_pElem[index] = data;
-			m_CurrentIndex = index + 1;
-		}
-	}
+private:
+	GLuint m_VAO, m_VBO, m_IBO;
+	GLsizei m_IndexCount;
+
 };
 
