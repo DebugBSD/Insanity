@@ -31,7 +31,54 @@
  */
 
 #pragma once
+
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#include "Mesh.h"
+#include "Shader.h"
+
 class GameApplication
 {
+public:
+    GameApplication();
+
+    bool Init(int width, int height, const std::string &windowTitle);
+
+    void Run();
+
+    void Shutdown();
+private:
+
+    void ProcessInput();
+
+    void Update(float dt);
+
+    void Render();
+
+    void CreateTriangle();
+
+    void CreateShaders();
+
+private:
+    GLFWwindow* m_pWindow;
+    // private members
+    int m_Width;
+    int m_Height;
+
+    std::vector<Mesh*> m_MeshList;
+    std::vector<Shader*> m_ShaderList;
+
+    // Esto deberia estar en la clase Render
+    glm::mat4 m_Projection;
+
 };
 
