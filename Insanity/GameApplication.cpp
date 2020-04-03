@@ -36,7 +36,12 @@ GameApplication::GameApplication():
     m_Height{0},
     m_Width{0},
     m_pWindow{nullptr},
-    m_Projection{0}
+    m_Projection{0},
+    m_LastX{ 0 },
+    m_LastY{ 0 },
+    m_XChange{ 0 },
+    m_YChange{ 0 },
+    m_MouseFirstMoved{ true }
 {
 }
 
@@ -44,6 +49,11 @@ bool GameApplication::Init(int width, int height, const std::string& windowTitle
 {
     m_Height = height;
     m_Width = width;
+
+    for (auto& key : m_Keys)
+    {
+        key = false;
+    }
 
     if (glfwInit() == GLFW_FALSE)
     {
@@ -76,6 +86,11 @@ bool GameApplication::Init(int width, int height, const std::string& windowTitle
     // Set context for GLEW
     glfwMakeContextCurrent(m_pWindow);
 
+    CreateCallbacks();
+
+    // Desactivamos el cursor (al estilo de un First Person Shooter)
+    glfwSetInputMode(m_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     // Allow modern extension features
     glewExperimental = GL_TRUE;
     GLenum res = glewInit();
@@ -98,6 +113,9 @@ bool GameApplication::Init(int width, int height, const std::string& windowTitle
     glEnable(GL_DEPTH_TEST);
 
     glViewport(0, 0, bufferWidth, bufferHeight);
+
+    // We setup our input handler.
+    glfwSetWindowUserPointer(m_pWindow, this);
 
     CreateTriangle();
     CreateShaders();
@@ -123,6 +141,9 @@ void GameApplication::Run()
         GLuint uniformModel = m_ShaderList[0]->GetModelLocation();
         GLuint uniformProjection = m_ShaderList[0]->GetProjectionLocation();
 
+        glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(m_Projection));
+
+
         // Renderizamos el primer objeto
         // Aplicamos Transform
         glm::mat4 model(1.0f);
@@ -130,7 +151,6 @@ void GameApplication::Run()
         model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
         // Establecemos el valor al shader.
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(m_Projection));
 
         m_MeshList[0]->RenderMesh();
 
@@ -152,6 +172,20 @@ void GameApplication::Run()
 void GameApplication::Shutdown()
 {
     glfwTerminate();
+}
+
+GLfloat GameApplication::GetXChange()
+{
+    GLfloat y = m_YChange;
+    m_YChange = 0.0f;
+    return y;
+}
+
+GLfloat GameApplication::GetYChange()
+{
+    GLfloat x = m_YChange;
+    m_XChange = 0.0f;
+    return x;
 }
 
 void GameApplication::ProcessInput()
@@ -203,4 +237,50 @@ void GameApplication::CreateShaders()
     Shader* pShader = new Shader();
     pShader->CreateFromFile(vShader, fShader);
     m_ShaderList.push_back(pShader);
+}
+
+void GameApplication::CreateCallbacks()
+{
+    glfwSetKeyCallback(m_pWindow, handKeys); 
+    glfwSetCursorPosCallback(m_pWindow, handMouse);
+}
+
+void GameApplication::handKeys(GLFWwindow* pWindow, int key, int scancode, int action, int mode)
+{
+    GameApplication* pMainWindow = static_cast<GameApplication*>(glfwGetWindowUserPointer(pWindow));
+    
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(pWindow, GLFW_TRUE);
+    }
+
+    if (key >= 0 && key < 1024)
+    {
+        if (action == GLFW_PRESS)
+        {
+            pMainWindow->m_Keys[key] = true;
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            pMainWindow->m_Keys[key] = false;
+        }
+    }
+}
+
+void GameApplication::handMouse(GLFWwindow* pWindow, double xPos, double yPos)
+{
+    GameApplication* pMainWindow = static_cast<GameApplication*>(glfwGetWindowUserPointer(pWindow));
+
+    if (pMainWindow->m_MouseFirstMoved)
+    {
+        pMainWindow->m_LastX = xPos;
+        pMainWindow->m_LastY = yPos;
+        pMainWindow->m_MouseFirstMoved = false;
+    }
+
+    pMainWindow->m_XChange = xPos - pMainWindow->m_LastX;
+    pMainWindow->m_YChange = pMainWindow->m_LastY - yPos;
+
+    pMainWindow->m_LastX = xPos;
+    pMainWindow->m_LastY = yPos;
 }

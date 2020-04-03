@@ -19,6 +19,12 @@
     <Filter Include="GameApplication">
       <UniqueIdentifier>{8b55b0f2-a3a5-4a32-af33-0faf7954cbe7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECS\Entities">
+      <UniqueIdentifier>{2379f165-795d-446a-8162-28b4bd7a0588}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECS\Components">
+      <UniqueIdentifier>{d0decd20-0250-4416-aba4-8ad2c1f4714f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />

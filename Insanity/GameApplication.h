@@ -56,6 +56,12 @@ public:
     void Run();
 
     void Shutdown();
+
+    bool* GetKeys() { return m_Keys; }
+
+    GLfloat GetXChange();
+    GLfloat GetYChange();
+
 private:
 
     void ProcessInput();
@@ -80,5 +86,16 @@ private:
     // Esto deberia estar en la clase Render
     glm::mat4 m_Projection;
 
+    bool m_Keys[1024];
+    GLfloat m_LastX;
+    GLfloat m_LastY;
+    GLfloat m_XChange;
+    GLfloat m_YChange;
+    bool m_MouseFirstMoved;
+
+    // Handle key presses.
+    void CreateCallbacks();
+    static void handKeys(GLFWwindow* pWindow, int key, int scancode, int action, int mode);
+    static void handMouse(GLFWwindow* pWindow, double xPos, double yPos);
 };
 
