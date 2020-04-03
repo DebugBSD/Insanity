@@ -84,6 +84,7 @@ void Shader::CompileShader(const std::string& vCode, const std::string& fCode)
     // Cogemos el valor de la variable uniform declarada en el shader.
     m_UniformModel = glGetUniformLocation(m_ShaderID, "model");
     m_UniformProjection = glGetUniformLocation(m_ShaderID, "projection");
+    m_UniformView = glGetUniformLocation(m_ShaderID, "view");
 }
 
 void Shader::AddShader(const std::string& shaderCode, GLenum shaderType)
@@ -145,6 +146,11 @@ GLuint Shader::GetProjectionLocation()
 GLuint Shader::GetModelLocation()
 {
     return m_UniformModel;
+}
+
+GLuint Shader::GetViewLocation()
+{
+    return m_UniformView;;
 }
 
 void Shader::UseShader()

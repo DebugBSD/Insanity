@@ -50,12 +50,14 @@ public:
 
 	GLuint GetProjectionLocation();
 	GLuint GetModelLocation();
+    GLuint GetViewLocation();
 
 	void UseShader();
 	void ClearShader();
 
 private:
 	GLuint m_ShaderID, m_UniformProjection, m_UniformModel;
+    GLuint m_UniformView;
 
 	void CompileShader(const std::string& vCode, const std::string& fCode);
 	void AddShader(const std::string& shaderCode, GLenum shaderType);

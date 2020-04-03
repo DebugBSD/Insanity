@@ -31,6 +31,7 @@
  */
 
 #include "GameApplication.h"
+#include "CameraComponent.h"
 
 GameApplication::GameApplication():
     m_Height{0},
@@ -41,7 +42,10 @@ GameApplication::GameApplication():
     m_LastY{ 0 },
     m_XChange{ 0 },
     m_YChange{ 0 },
-    m_MouseFirstMoved{ true }
+    m_MouseFirstMoved{ true },
+    m_pCameraComponent{nullptr}, 
+    deltaTime{0.0f},
+    lastTime{0.0f}
 {
 }
 
@@ -80,8 +84,7 @@ bool GameApplication::Init(int width, int height, const std::string& windowTitle
     }
 
     // Get buffer size information
-    int bufferWidth, bufferHeight;
-    glfwGetFramebufferSize(m_pWindow, &bufferWidth, &bufferHeight);
+    glfwGetFramebufferSize(m_pWindow, &m_BufferWidth, &m_BufferHeight);
 
     // Set context for GLEW
     glfwMakeContextCurrent(m_pWindow);
@@ -112,25 +115,43 @@ bool GameApplication::Init(int width, int height, const std::string& windowTitle
 
     glEnable(GL_DEPTH_TEST);
 
-    glViewport(0, 0, bufferWidth, bufferHeight);
+    glViewport(0, 0, m_BufferWidth, m_BufferHeight);
 
     // We setup our input handler.
     glfwSetWindowUserPointer(m_pWindow, this);
 
-    CreateTriangle();
-    CreateShaders();
-
-    m_Projection = glm::perspective(45.0f, (GLfloat)bufferWidth / (GLfloat)bufferHeight, 0.1f, 1000.0f);
-
+    
     return true;
 }
 
 void GameApplication::Run()
 {
+    // We set our scene
+
+    CreateTriangle();
+    CreateShaders();
+
+    m_pCameraComponent = new CameraComponent(
+        glm::vec3{ 0.0f, 0.5f, -3.5f }, 
+        glm::vec3{ 0.0f, 1.0f, 0.0f }, 
+        -90.0f,
+        0.0f, 
+        5.0f,
+        1.0f);
+
+    m_Projection = glm::perspective(45.0f, (GLfloat)m_BufferWidth / (GLfloat)m_BufferHeight, 0.1f, 1000.0f);
+
+    GLuint uniformModel{ 0 }, uniformProjection{ 0 }, uniformView{ 0 };
     while (!glfwWindowShouldClose(m_pWindow))
     {
+        GLfloat now = glfwGetTime();
+        deltaTime = now - lastTime;
+        lastTime = now;
         // Detect any external event (Mouse, Keyboard, ...)
         glfwPollEvents();
+
+        m_pCameraComponent->KeyControl(m_Keys, deltaTime);
+        m_pCameraComponent->MouseControl(GetXChange() , GetYChange());
 
         // Clear the Window
         glClearColor(0, 0, 0, 0);
@@ -138,8 +159,9 @@ void GameApplication::Run()
 
         // Here we render the scene.
         m_ShaderList[0]->UseShader();
-        GLuint uniformModel = m_ShaderList[0]->GetModelLocation();
-        GLuint uniformProjection = m_ShaderList[0]->GetProjectionLocation();
+        uniformModel = m_ShaderList[0]->GetModelLocation();
+        uniformProjection = m_ShaderList[0]->GetProjectionLocation();
+        uniformView = m_ShaderList[0]->GetViewLocation();
 
         glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(m_Projection));
 
@@ -151,7 +173,7 @@ void GameApplication::Run()
         model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
         // Establecemos el valor al shader.
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-
+        glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(m_pCameraComponent->CalculateViewMatrix()));
         m_MeshList[0]->RenderMesh();
 
         // Renderizamos el segundo objeto.
@@ -160,6 +182,7 @@ void GameApplication::Run()
         model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
         model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(m_pCameraComponent->CalculateViewMatrix()));
         m_MeshList[1]->RenderMesh();
 
         glUseProgram(0);
@@ -176,16 +199,16 @@ void GameApplication::Shutdown()
 
 GLfloat GameApplication::GetXChange()
 {
-    GLfloat y = m_YChange;
-    m_YChange = 0.0f;
-    return y;
+    GLfloat x = m_XChange;
+    m_XChange = 0.0f;
+    return x;
 }
 
 GLfloat GameApplication::GetYChange()
 {
-    GLfloat x = m_YChange;
-    m_XChange = 0.0f;
-    return x;
+    GLfloat y = m_YChange;
+    m_YChange = 0.0f;
+    return y;
 }
 
 void GameApplication::ProcessInput()

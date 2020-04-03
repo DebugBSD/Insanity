@@ -40,6 +40,9 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>GameApplication</Filter>
     </ClCompile>
+    <ClCompile Include="CameraComponent.cpp">
+      <Filter>ECS\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Insanity.licenseheader" />
@@ -65,6 +68,9 @@
     </ClInclude>
     <ClInclude Include="GameApplication.h">
       <Filter>GameApplication</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraComponent.h">
+      <Filter>ECS\Components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

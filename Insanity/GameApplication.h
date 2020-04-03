@@ -80,6 +80,9 @@ private:
     int m_Width;
     int m_Height;
 
+    int m_BufferWidth;
+    int m_BufferHeight;
+
     std::vector<Mesh*> m_MeshList;
     std::vector<Shader*> m_ShaderList;
 
@@ -97,5 +100,12 @@ private:
     void CreateCallbacks();
     static void handKeys(GLFWwindow* pWindow, int key, int scancode, int action, int mode);
     static void handMouse(GLFWwindow* pWindow, double xPos, double yPos);
+    
+    // Camera component.
+    class CameraComponent* m_pCameraComponent;
+
+    // Delta time
+    GLfloat deltaTime;
+    GLfloat lastTime;
 };
 
